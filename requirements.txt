@@ -1,0 +1,41 @@
+# ECDAT runtime dependencies.
+#
+# The runbook previously listed a bare `pip install ...` line with no manifest,
+# so there was no record of which versions the project was actually verified
+# against. Install with:  pip install -r requirements.txt
+
+# API and server
+fastapi>=0.115,<1.0
+uvicorn>=0.30,<1.0
+pydantic>=2.8,<3.0
+python-multipart>=0.0.9        # required by FastAPI for multipart file uploads
+
+# Desktop host
+pywebview>=5.0                 # Edge WebView2 window on Windows
+
+# Syntax-aware detection. The scanners parse Python, JavaScript, TypeScript and
+# Java rather than matching raw text, which is what lets them read real key
+# sizes and ignore cryptographic words in comments. Grammars ship as one
+# compiled extension (~5 MB) and need no network access.
+tree_sitter>=0.25
+tree_sitter_language_pack>=1.17
+
+# Binary signature matching. yara-x is VirusTotal's Rust implementation and the
+# successor to libyara; it ships stable-ABI wheels, so unlike yara-python it
+# installs on current Python without a C toolchain. Rules live in
+# backend/scanners/rules/crypto.yar as data.
+yara-x>=1.20
+
+# Reporting
+jinja2>=3.1,<4.0
+
+# Optional shared storage. ECDAT runs fully offline without a database; these
+# are only used when a MongoDB connection is configured in Settings.
+pymongo>=4.8,<5.0
+dnspython>=2.6                 # needed to resolve mongodb+srv:// URIs
+
+# Admin password hashing (PBKDF2-HMAC-SHA256)
+cryptography>=43.0
+
+# --- Build and test only -------------------------------------------------
+# pip install -r requirements-dev.txt

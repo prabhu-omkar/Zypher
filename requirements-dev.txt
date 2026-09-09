@@ -1,0 +1,8 @@
+# Development and packaging dependencies.
+#   pip install -r requirements.txt -r requirements-dev.txt
+
+-r requirements.txt
+
+pytest>=8.0
+httpx>=0.27          # required by fastapi.testclient
+pyinstaller>=6.10    # used by build.py to produce the Windows executables

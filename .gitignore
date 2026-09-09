@@ -1,0 +1,87 @@
+# ---------------------------------------------------------------- Build output
+dist/
+build/
+*.spec.bak
+
+# ------------------------------------------------------------------ Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# -------------------------------------------------------------------- Node
+node_modules/
+frontend/dist/
+frontend/node_modules/
+npm-debug.log*
+yarn-error.log*
+.vite/
+
+# --------------------------------------------------------------- Runtime data
+# Scan results and the per-installation identity are generated at runtime and
+# are specific to whoever ran the tool. They must never be committed: the
+# identity is what keeps one installation's scans out of another's view, and
+# shipping one would give every clone the same one.
+data_store/
+*.log
+ecdat_config.json
+zypher_config.json
+
+# ------------------------------------------------------------ Vendored binary
+# OpenGrep is ~52 MB. It is fetched during setup rather than committed, so the
+# repository stays clonable on a slow connection and the history does not carry
+# a binary that changes wholesale on every upgrade. Its LICENSE and NOTICE.md
+# are tracked, because the obligations are ours whether the binary is here or
+# not. See the README for how to install it.
+vendor/opengrep/*
+!vendor/opengrep/LICENSE
+!vendor/opengrep/NOTICE.md
+
+# -------------------------------------------------------- Submission material
+# Competition deliverables. They describe the project rather than build it, and
+# they carry team-identifying detail, so they are kept out of the public repo.
+*.pptx
+*.pdf
+*.docx
+SIH_details.md
+
+# ------------------------------------------------------- Local scan fixtures
+# Deliberately weak cryptography used to exercise the scanners. Harmless, but a
+# repository full of hardcoded keys and MD5 calls trips secret scanners and
+# teaches the wrong thing to anyone who reads it out of context.
+test/
+
+# ------------------------------------------------------------------ Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ----------------------------------------------------------------- Scratch
+design-system/
+*.tmp
+
+# ------------------------------------------------- Internal planning notes
+# Working documents from before the risk-model, migration, admin and agility
+# work. They describe a single-model Mosca engine, X and Y as per-algorithm
+# constants and the old product name, all of which the README now contradicts.
+# Kept locally as history; not published, because a repository whose own docs
+# disagree with each other is worse than one with fewer docs.
+prd.md
+architecture.md
+current_state.md
+implementation_plan.md
+phase_scope.md
+app_flow.md
+mosca_algorithm_worksheet.md
