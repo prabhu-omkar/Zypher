@@ -1,0 +1,423 @@
+# ECDAT Tier 4 — cryptographic parameter resolution by dataflow.
+#
+# Tiers 1-3 read one construct at a time. A key size written as a literal at the
+# top of a file, passed into a helper, and consumed three functions away is
+# invisible to them: the AST scanner sees `key_size=bits` and reports the size as
+# undetermined. These rules close that gap.
+#
+# Every rule follows the same shape, and the shape is the point:
+#
+#   source  = any literal of the right kind (a number, or a quoted string)
+#   sink    = a cryptographic API, with `focus-metavariable` pinned to the one
+#             argument whose value we want
+#
+# Because the source is generic rather than an enumeration of interesting values,
+# the rule does not have to know which key sizes are weak. OpenGrep reports the
+# literal that actually reached the argument in `dataflow_trace.taint_source`,
+# and ECDAT reads the real value out of it. Classification stays where it
+# belongs, in the quantum risk engine.
+#
+# `focus-metavariable` is load-bearing. Without it the sink is the whole call and
+# any tainted argument satisfies it — an early version of this file resolved
+# RSA's key size to 65537, the public exponent.
+#
+# `metadata.param` tells ECDAT what the resolved literal means; `metadata.family`
+# gives the algorithm when the sink names it, and is omitted when the sink is
+# generic and the algorithm is itself what the dataflow resolves.
+
+rules:
+
+# ---------------------------------------------------------------- Python
+
+  - id: ecdat-py-rsa-key-size
+    mode: taint
+    languages: [python]
+    severity: INFO
+    message: "RSA key size resolved by dataflow"
+    metadata: {param: key_size, family: RSA, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              regex: ^\d{2,6}$
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: rsa.generate_private_key(..., key_size=$S, ...)
+              - pattern: RSA.generate($S, ...)
+              - pattern: RSA.generate(bits=$S, ...)
+          - focus-metavariable: $S
+
+  - id: ecdat-py-dsa-dh-key-size
+    mode: taint
+    languages: [python]
+    severity: INFO
+    message: "Finite-field key size resolved by dataflow"
+    metadata: {param: key_size, family: Diffie-Hellman, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              regex: ^\d{2,6}$
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: dsa.generate_private_key(..., key_size=$S, ...)
+              - pattern: dh.generate_parameters(..., key_size=$S, ...)
+              - pattern: DSA.generate($S, ...)
+          - focus-metavariable: $S
+
+  - id: ecdat-py-curve
+    mode: taint
+    languages: [python]
+    severity: INFO
+    message: "Elliptic curve resolved by dataflow"
+    metadata: {param: curve, family: ECC, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $STR
+          - metavariable-regex:
+              metavariable: $STR
+              regex: "^['\"].{2,40}['\"]$"
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: ec.generate_private_key($C, ...)
+              - pattern: ECC.generate(curve=$C, ...)
+              - pattern: ec.get_curve_for_oid($C)
+          - focus-metavariable: $C
+
+  - id: ecdat-py-algorithm-name
+    mode: taint
+    languages: [python]
+    severity: INFO
+    message: "Algorithm name resolved by dataflow"
+    metadata: {param: algorithm, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $STR
+          - metavariable-regex:
+              metavariable: $STR
+              regex: "^['\"].{2,40}['\"]$"
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: hashlib.new($A, ...)
+              - pattern: hmac.new(..., digestmod=$A, ...)
+              - pattern: Cipher.new($A, ...)
+              - pattern: hashes.Hash($A, ...)
+          - focus-metavariable: $A
+
+# ------------------------------------------------------------------ Java
+
+  - id: ecdat-java-key-size
+    mode: taint
+    languages: [java]
+    severity: INFO
+    message: "Key size resolved by dataflow"
+    metadata: {param: key_size, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              regex: ^\d{2,6}$
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $G.init($S)
+              - pattern: $G.init($S, ...)
+              - pattern: $G.initialize($S)
+              - pattern: $G.initialize($S, ...)
+              - pattern: new RSAKeyGenParameterSpec($S, ...)
+          - focus-metavariable: $S
+
+  - id: ecdat-java-algorithm-name
+    mode: taint
+    languages: [java]
+    severity: INFO
+    message: "Algorithm name resolved by dataflow"
+    metadata: {param: algorithm, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $STR
+          - metavariable-regex:
+              metavariable: $STR
+              regex: '^".{2,60}"$'
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: Cipher.getInstance($A, ...)
+              - pattern: KeyGenerator.getInstance($A, ...)
+              - pattern: KeyPairGenerator.getInstance($A, ...)
+              - pattern: MessageDigest.getInstance($A, ...)
+              - pattern: Signature.getInstance($A, ...)
+              - pattern: Mac.getInstance($A, ...)
+              - pattern: SecretKeyFactory.getInstance($A, ...)
+              - pattern: new SecretKeySpec(..., $A)
+          - focus-metavariable: $A
+
+  - id: ecdat-java-curve
+    mode: taint
+    languages: [java]
+    severity: INFO
+    message: "Elliptic curve resolved by dataflow"
+    metadata: {param: curve, family: ECC, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $STR
+          - metavariable-regex:
+              metavariable: $STR
+              regex: '^".{2,40}"$'
+    pattern-sinks:
+      - patterns:
+          - pattern: new ECGenParameterSpec($C)
+          - focus-metavariable: $C
+
+  - id: ecdat-java-protocol
+    mode: taint
+    languages: [java]
+    severity: INFO
+    message: "TLS protocol version resolved by dataflow"
+    metadata: {param: algorithm, asset_type: protocol}
+    pattern-sources:
+      - patterns:
+          - pattern: $STR
+          - metavariable-regex:
+              metavariable: $STR
+              regex: '^".{2,30}"$'
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: SSLContext.getInstance($P, ...)
+              - pattern: $X.setEnabledProtocols($P)
+          - focus-metavariable: $P
+
+# --------------------------------------------------------- JavaScript / TS
+
+  - id: ecdat-js-key-size
+    mode: taint
+    languages: [javascript, typescript]
+    severity: INFO
+    message: "Key size resolved by dataflow"
+    metadata: {param: key_size, family: RSA, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              regex: ^\d{2,6}$
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: "crypto.generateKeyPairSync(..., {..., modulusLength: $S, ...}, ...)"
+              - pattern: "crypto.generateKeyPair(..., {..., modulusLength: $S, ...}, ...)"
+              - pattern: "generateKeyPairSync(..., {..., modulusLength: $S, ...}, ...)"
+              - pattern: "generateKeyPair(..., {..., modulusLength: $S, ...}, ...)"
+          - focus-metavariable: $S
+
+  - id: ecdat-js-algorithm-name
+    mode: taint
+    languages: [javascript, typescript]
+    severity: INFO
+    message: "Algorithm name resolved by dataflow"
+    metadata: {param: algorithm, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $STR
+          - metavariable-regex:
+              metavariable: $STR
+              regex: "^['\"].{2,40}['\"]$"
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: crypto.createHash($A, ...)
+              - pattern: crypto.createHmac($A, ...)
+              - pattern: crypto.createCipheriv($A, ...)
+              - pattern: crypto.createDecipheriv($A, ...)
+              - pattern: createHash($A, ...)
+              - pattern: createCipheriv($A, ...)
+          - focus-metavariable: $A
+
+  - id: ecdat-js-curve
+    mode: taint
+    languages: [javascript, typescript]
+    severity: INFO
+    message: "Elliptic curve resolved by dataflow"
+    metadata: {param: curve, family: ECC, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $STR
+          - metavariable-regex:
+              metavariable: $STR
+              regex: "^['\"].{2,40}['\"]$"
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: crypto.createECDH($C)
+              - pattern: "{..., namedCurve: $C, ...}"
+          - focus-metavariable: $C
+
+# -------------------------------------------------------------------- Go
+
+  - id: ecdat-go-key-size
+    mode: taint
+    languages: [go]
+    severity: INFO
+    message: "RSA/DSA key size resolved by dataflow"
+    metadata: {param: key_size, family: RSA, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              regex: ^\d{2,6}$
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: rsa.GenerateKey($R, $S)
+              - pattern: dsa.GenerateParameters(..., $S)
+          - focus-metavariable: $S
+
+# -------------------------------------------------------------------- C#
+
+  - id: ecdat-csharp-rsa-key-size
+    mode: taint
+    languages: [csharp]
+    severity: INFO
+    message: "RSA key size resolved by dataflow"
+    metadata: {param: key_size, family: RSA, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              regex: ^\d{2,6}$
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: new RSACryptoServiceProvider($S)
+              - pattern: new RSACng($S)
+              - pattern: RSA.Create($S)
+          - focus-metavariable: $S
+
+  - id: ecdat-csharp-dsa-key-size
+    mode: taint
+    languages: [csharp]
+    severity: INFO
+    message: "DSA key size resolved by dataflow"
+    metadata: {param: key_size, family: Diffie-Hellman, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              regex: ^\d{2,6}$
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: new DSACryptoServiceProvider($S)
+              - pattern: DSA.Create($S)
+          - focus-metavariable: $S
+
+  - id: ecdat-csharp-algorithm-name
+    mode: taint
+    languages: [csharp]
+    severity: INFO
+    message: "Algorithm name resolved by dataflow"
+    metadata: {param: algorithm, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $STR
+          - metavariable-regex:
+              metavariable: $STR
+              regex: '^".{2,40}"$'
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: HashAlgorithm.Create($A)
+              - pattern: SymmetricAlgorithm.Create($A)
+              - pattern: CryptoConfig.CreateFromName($A)
+          - focus-metavariable: $A
+
+# ------------------------------------------------------------------ Ruby
+
+  - id: ecdat-ruby-key-size
+    mode: taint
+    languages: [ruby]
+    severity: INFO
+    message: "RSA/DSA key size resolved by dataflow"
+    metadata: {param: key_size, family: RSA, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              regex: ^\d{2,6}$
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: OpenSSL::PKey::RSA.new($S)
+              - pattern: OpenSSL::PKey::RSA.generate($S)
+              - pattern: OpenSSL::PKey::DSA.new($S)
+          - focus-metavariable: $S
+
+  - id: ecdat-ruby-algorithm-name
+    mode: taint
+    languages: [ruby]
+    severity: INFO
+    message: "Algorithm name resolved by dataflow"
+    metadata: {param: algorithm, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $STR
+          - metavariable-regex:
+              metavariable: $STR
+              regex: "^['\"].{2,40}['\"]$"
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: OpenSSL::Cipher.new($A)
+              - pattern: OpenSSL::Digest.new($A)
+          - focus-metavariable: $A
+
+# ------------------------------------------------------------------- PHP
+
+  - id: ecdat-php-key-size
+    mode: taint
+    languages: [php]
+    severity: INFO
+    message: "Key size resolved by dataflow"
+    metadata: {param: key_size, family: RSA, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              regex: ^\d{2,6}$
+    pattern-sinks:
+      - patterns:
+          - pattern: openssl_pkey_new(array("private_key_bits" => $S, ...))
+          - focus-metavariable: $S
+
+  - id: ecdat-php-algorithm-name
+    mode: taint
+    languages: [php]
+    severity: INFO
+    message: "Algorithm name resolved by dataflow"
+    metadata: {param: algorithm, asset_type: algorithm}
+    pattern-sources:
+      - patterns:
+          - pattern: $STR
+          - metavariable-regex:
+              metavariable: $STR
+              regex: "^['\"].{2,40}['\"]$"
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: openssl_encrypt(..., $A, ...)
+              - pattern: openssl_digest(..., $A, ...)
+              - pattern: hash($A, ...)
+          - focus-metavariable: $A
