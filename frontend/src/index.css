@@ -1,0 +1,827 @@
+/*
+ * Zypher design tokens — light.
+ *
+ * Fonts are bundled, not fetched: this ships as an offline desktop app, so a
+ * remotely-hosted webfont would simply never load.
+ */
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';
+@import '@fontsource/jetbrains-mono/latin-400.css';
+@import '@fontsource/jetbrains-mono/latin-500.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ---- Canvas ----
+       A faintly cool neutral rather than white: white cards then read as
+       raised, so hierarchy comes from layering instead of from drawing a
+       border around everything. */
+    --canvas: #f6f7f9;
+    --surface: #ffffff;
+    --surface-sunken: #f1f3f6;
+    --surface-hover: #f8f9fb;
+
+    /* ---- Line work ----
+       Hairlines only, and used sparingly. Depth is carried by shadow. */
+    --line: #e6e8ec;
+    --line-strong: #d3d7de;
+
+    /* ---- Text ----
+       Near-black with a trace of blue rather than #000: pure black on white
+       is harsh at small sizes and reads as unconsidered. */
+    --ink: #16181d;
+    --ink-soft: #4a4f5a;
+    --ink-muted: #757b88;
+    --ink-faint: #9aa0ac;
+
+    /* ---- Accent ----
+       One chromatic hue for interactive meaning — active nav, links, focus,
+       selection. Primary buttons are near-black, which keeps the accent rare
+       enough to actually signal something. */
+    --accent: #3d4ed8;
+    --accent-hover: #3342c4;
+    --accent-soft: #eef0fe;
+    --accent-line: #c9cff9;
+
+    --solid: #16181d;
+    --solid-hover: #2c3038;
+    --on-solid: #ffffff;
+
+    /* ---- Risk ramp ----
+       Two values per hue, because text and chart marks have different jobs.
+       The base is darkened until it clears 4.5:1 on white for label text; the
+       `-mark` variant is brighter and more saturated for arcs, lines and bars,
+       where only 3:1 is required and a text-safe colour looks muddy. Using one
+       value for both is what makes a light palette read as either washed out
+       or, in the case of yellow, olive. `-fill` tints back large areas off. */
+    --critical: #c42b21;
+    --critical-mark: #e0483f;
+    --critical-fill: #fdedec;
+    --critical-line: #f4c6c2;
+
+    --high: #b1520a;
+    --high-mark: #e07b1e;
+    --high-fill: #fdf2e6;
+    --high-line: #f3d5b0;
+
+    --medium: #97690a;
+    --medium-mark: #dda31a;
+    --medium-fill: #fdf6e4;
+    --medium-line: #eedca6;
+
+    --low: #12784a;
+    --low-mark: #1f9d5c;
+    --low-fill: #e9f6ef;
+    --low-line: #b2ddcd;
+
+    --neutral: #6b7280;
+    --neutral-mark: #9aa0ac;
+    --neutral-fill: #f1f3f6;
+    --neutral-line: #dfe3e9;
+
+    /* Non-risk data series — composition breakdowns that carry no severity.
+       Muted so the risk ramp stays the loudest thing on the page. */
+    --series-a: #6b74d8;
+    --series-b: #74a3e0;
+
+    /* ---- Elevation ----
+       Tinted with the canvas hue and stacked, so edges stay soft. A grey-black
+       shadow on a cool ground is the classic "cheap admin panel" tell. */
+    --shadow-xs: 0 1px 2px rgba(19, 24, 38, 0.05);
+    --shadow-sm: 0 1px 2px rgba(19, 24, 38, 0.05), 0 1px 3px rgba(19, 24, 38, 0.04);
+    --shadow-md: 0 2px 4px rgba(19, 24, 38, 0.04), 0 4px 12px rgba(19, 24, 38, 0.06);
+    --shadow-lg: 0 4px 8px rgba(19, 24, 38, 0.04), 0 12px 32px rgba(19, 24, 38, 0.10);
+    --shadow-pop: 0 8px 16px rgba(19, 24, 38, 0.06), 0 24px 56px rgba(19, 24, 38, 0.14);
+
+    /* ---- Shape ----
+       Three steps only, each roughly 1.5x the last. A shape language with more
+       radii than that stops being a language: nothing reads as deliberate
+       because nothing is repeated. Controls take -sm, cards take -lg, and the
+       middle step is for anything nested inside a card. */
+    --radius-sm: 6px;
+    --radius: 9px;
+    --radius-lg: 13px;
+    --radius-pill: 999px;
+
+    /* ---- Motion ----
+       One duration for state changes and one for anything that moves a
+       surface. Timing is the cheapest signal of care in an interface and the
+       easiest to get inconsistent, so it is named rather than typed inline. */
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+    --dur-fast: 120ms;
+    --dur: 180ms;
+    --dur-slow: 260ms;
+
+    --sidebar-w: 216px;
+
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv05' 1, 'ss01' 1;
+  }
+
+  /* Aligned columns of digits. */
+  .nums,
+  th,
+  td,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  code,
+  pre,
+  .mono {
+    font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+    font-feature-settings: normal;
+  }
+
+  /* ---------------------------------------------------------- Type scale
+
+     Stated once, here, rather than as an inline font size per component. The
+     steps are deliberately far apart: a heading one point larger than its body
+     text is not a hierarchy, it is a rounding error, and that is what made
+     dense screens read as undifferentiated.
+
+     Tracking tightens as size grows, which is how type is actually set —
+     letterforms that look correctly spaced at 13px look loose at 28px. */
+
+  .t-display {
+    font-size: 1.75rem;
+    line-height: 1.15;
+    font-weight: 650;
+    letter-spacing: -0.028em;
+  }
+
+  .t-title {
+    font-size: 1.25rem;
+    line-height: 1.25;
+    font-weight: 620;
+    letter-spacing: -0.021em;
+  }
+
+  .t-head {
+    font-size: 0.9375rem;
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+
+  .t-body {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    letter-spacing: -0.003em;
+  }
+
+  .t-small {
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+
+  /* Large numerals need the most negative tracking of all. */
+  .display {
+    letter-spacing: -0.03em;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Anyone who has asked the operating system to stop moving things gets an
+     interface that does not move. Transitions are decoration here; none of them
+     carries meaning that is lost by removing it. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--accent-hover);
+  }
+
+  select,
+  input,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cfd4dc;
+    border-radius: 6px;
+    border: 3px solid var(--canvas);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #b6bcc7;
+  }
+}
+
+@layer components {
+  /* ---------------------------------------------------------------- Surfaces */
+
+  .panel {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .panel-flat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+  }
+
+  .panel-sunken {
+    background: var(--surface-sunken);
+    border-radius: var(--radius);
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.125rem 1.25rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .panel-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* The square a panel-head icon sits in. Giving every section heading a mark
+     is what makes a long scrolling page navigable at a glance — the eye finds
+     the shape before it reads the words. */
+  .panel-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: var(--surface-sunken);
+    color: var(--ink-soft);
+  }
+
+  .panel-sub {
+    font-size: 0.8125rem;
+    color: var(--ink-muted);
+    margin-top: 0.1875rem;
+    line-height: 1.5;
+  }
+
+  /* An eyebrow label: small, spaced, quiet. */
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  /* ----------------------------------------------------------------- Buttons */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4375rem;
+    min-height: 34px;
+    padding: 0 0.8125rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 160ms ease, border-color 160ms ease,
+      color 160ms ease, box-shadow 160ms ease;
+  }
+
+  /* A disabled control should read as "not yet", not as a broken element.
+     Flattening opacity over a near-black fill produces a muddy grey that looks
+     like a rendering fault, so disabled states get their own quiet surface. */
+  .btn:disabled {
+    cursor: not-allowed;
+    background: var(--surface-sunken);
+    border-color: transparent;
+    color: var(--ink-faint);
+    box-shadow: none;
+  }
+
+  /* Near-black primary: crisp on white, and it keeps the accent hue rare. */
+  .btn-primary {
+    background: var(--solid);
+    color: var(--on-solid);
+    box-shadow: var(--shadow-xs);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--solid-hover);
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    border-color: var(--line-strong);
+    color: var(--ink);
+    box-shadow: var(--shadow-xs);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--surface-hover);
+    border-color: #c2c7d0;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--surface-sunken);
+    color: var(--ink);
+  }
+
+  .btn-danger {
+    background: transparent;
+    border-color: var(--critical-line);
+    color: var(--critical);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--critical-fill);
+  }
+
+  .btn-lg {
+    min-height: 42px;
+    padding: 0 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+  }
+
+  /* ------------------------------------------------------------------- Forms */
+
+  .field {
+    width: 100%;
+    min-height: 36px;
+    padding: 0 0.6875rem;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    color: var(--ink);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .field::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .field:hover:not(:focus) {
+    border-color: #c2c7d0;
+  }
+
+  .field:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  select.field {
+    cursor: pointer;
+    text-overflow: ellipsis;
+    appearance: none;
+    padding-right: 1.875rem;
+    /* Chevron drawn in, so the control matches the design rather than
+       rendering as a native Windows dropdown. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23757b88' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6875rem center;
+  }
+
+  /* A native checkbox is the one control Windows still draws itself, so beside
+     a row of styled selects it reads as a piece of a different application.
+     Drawn here at the same weight as the rest. */
+  input[type='checkbox'] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    flex: none;
+    border-radius: 4px;
+    border: 1.5px solid var(--line-strong);
+    background: var(--surface);
+    cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+    transition: background-color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease);
+  }
+  input[type='checkbox']:hover:not(:disabled) {
+    border-color: var(--ink-faint);
+  }
+  input[type='checkbox']::before {
+    content: '';
+    width: 9px;
+    height: 9px;
+    transform: scale(0);
+    transition: transform var(--dur-fast) var(--ease);
+    background: var(--on-solid);
+    clip-path: polygon(14% 45%, 0 60%, 39% 100%, 100% 22%, 84% 8%, 39% 71%);
+  }
+  input[type='checkbox']:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  input[type='checkbox']:checked::before {
+    transform: scale(1);
+  }
+
+  /* A checkbox sitting in a row of 36px controls needs the same height, or it
+     floats and the row reads as ragged. */
+  .field-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 36px;
+    padding: 0 0.6875rem 0 0.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    font-size: 0.8125rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease);
+  }
+  .field-check:hover {
+    background: var(--surface-hover);
+    border-color: var(--line);
+  }
+
+  .label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 0.375rem;
+  }
+
+  .hint {
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    margin-top: 0.4375rem;
+    line-height: 1.5;
+  }
+
+  /* Range input, styled rather than left native. */
+  input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line-strong);
+    cursor: pointer;
+  }
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1.5px solid var(--accent);
+    box-shadow: var(--shadow-sm);
+    transition: transform 140ms ease;
+  }
+  input[type='range']::-webkit-slider-thumb:hover {
+    transform: scale(1.12);
+  }
+  input[type='range']:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+
+  /* ------------------------------------------------------------------ Badges */
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.45;
+    white-space: nowrap;
+  }
+
+  .badge-critical {
+    background: var(--critical-fill);
+    border-color: var(--critical-line);
+    color: var(--critical);
+  }
+  .badge-high {
+    background: var(--high-fill);
+    border-color: var(--high-line);
+    color: var(--high);
+  }
+  .badge-medium {
+    background: var(--medium-fill);
+    border-color: var(--medium-line);
+    color: var(--medium);
+  }
+  .badge-low {
+    background: var(--low-fill);
+    border-color: var(--low-line);
+    color: var(--low);
+  }
+  .badge-neutral {
+    background: var(--neutral-fill);
+    border-color: var(--neutral-line);
+    color: var(--neutral);
+  }
+
+  /* ------------------------------------------------------------------ Tables */
+
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.8125rem;
+  }
+
+  .data-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface);
+    padding: 0.5rem 0.875rem;
+    text-align: left;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .data-table tbody td {
+    padding: 0.6875rem 0.875rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+    color: var(--ink-soft);
+  }
+
+  .data-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .data-table tbody tr.is-clickable {
+    cursor: pointer;
+    transition: background-color 130ms ease;
+  }
+
+  .data-table tbody tr.is-clickable:hover {
+    background: var(--surface-hover);
+  }
+
+  .th-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition: color 140ms ease;
+  }
+
+  .th-sort:hover {
+    color: var(--ink);
+  }
+
+  /* An inline-flex button inside a right-aligned cell still packs its own
+     contents to the left, so the sort arrow ended up between the label and the
+     column edge instead of after it. */
+  .th-sort-right {
+    flex-direction: row-reverse;
+  }
+
+  /* Wide tables scroll inside their panel; the page body never does. */
+  .table-scroll {
+    overflow: auto;
+  }
+
+  /* ------------------------------------------------------------------- Misc */
+
+  .divide-rows > * + * {
+    border-top: 1px solid var(--line);
+  }
+
+  .kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6875rem;
+    padding: 0.0625rem 0.3125rem;
+    border-radius: 4px;
+    background: var(--surface-sunken);
+    border: 1px solid var(--line);
+    color: var(--ink-muted);
+  }
+}
+
+@layer utilities {
+  .text-muted {
+    color: var(--ink-muted);
+  }
+  .text-faint {
+    color: var(--ink-faint);
+  }
+  .text-soft {
+    color: var(--ink-soft);
+  }
+
+  .truncate-start {
+    direction: rtl;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .truncate-start > * {
+    direction: ltr;
+    unicode-bidi: embed;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-slide-up {
+    animation: slide-up 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer components {
+  /* --------------------------------------------------------- Affordances */
+
+  /* Anything that responds to a click says so. Cheap to state once; invisible
+     to a user until it is missing, at which point the whole interface feels
+     inert. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+
+  /* A card that is itself a control. The lift is small on purpose: a surface
+     that jumps reads as a toy, one that does nothing reads as a picture. */
+  .panel-interactive {
+    transition: box-shadow var(--dur) var(--ease),
+      transform var(--dur) var(--ease),
+      border-color var(--dur) var(--ease);
+  }
+  .panel-interactive:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .panel-interactive:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* A filter or a selected value: reads as removable, unlike a badge, which
+     reads as a fact about the row it sits in. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.1875rem 0.5rem 0.1875rem 0.625rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+  .chip:hover {
+    border-color: var(--ink-faint);
+    color: var(--ink);
+  }
+  .chip-active {
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+    color: var(--accent-hover);
+  }
+
+  /* A small coloured dot for legends and inline status, where a full badge
+     would shout. */
+  .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: var(--radius-pill);
+    flex: none;
+  }
+
+  /* Rows in a scrolling list that can be opened. */
+  .row-interactive {
+    transition: background-color var(--dur-fast) var(--ease);
+  }
+  .row-interactive:hover {
+    background: var(--surface-hover);
+  }
+
+  /* A thin rule carrying a label — used to break long pages into named bands
+     without spending a full panel header on each. */
+  .rule-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--ink-muted);
+  }
+  .rule-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+}
