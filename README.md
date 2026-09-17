@@ -141,18 +141,9 @@ cd frontend && npm install && cd ..
 
 ### The dataflow engine
 
-Tier 4 uses [OpenGrep](https://github.com/opengrep/opengrep) (LGPL-2.1), which
-is **not committed to this repository** — the binary is ~52 MB and would
-dominate the history. Download `opengrep-core_windows_x86.exe` from the
-OpenGrep releases and place it at:
-
-```
-vendor/opengrep/opengrep.exe
-```
-
-Zypher runs without it: the dataflow tier reports itself unavailable and the
-scan says so in its coverage notes rather than silently returning fewer
-results.
+Tier 4 uses [OpenGrep](https://github.com/opengrep/opengrep) (LGPL-2.1).
+The binary ships with the repository at `vendor/opengrep/opengrep.exe` — no
+separate download required.
 
 ### Build
 

@@ -37,14 +37,8 @@ ecdat_config.json
 zypher_config.json
 
 # ------------------------------------------------------------ Vendored binary
-# OpenGrep is ~52 MB. It is fetched during setup rather than committed, so the
-# repository stays clonable on a slow connection and the history does not carry
-# a binary that changes wholesale on every upgrade. Its LICENSE and NOTICE.md
-# are tracked, because the obligations are ours whether the binary is here or
-# not. See the README for how to install it.
-vendor/opengrep/*
-!vendor/opengrep/LICENSE
-!vendor/opengrep/NOTICE.md
+# OpenGrep binary is committed at vendor/opengrep/opengrep.exe.
+# LICENSE and NOTICE.md are tracked alongside it.
 
 # -------------------------------------------------------- Submission material
 # Competition deliverables. They describe the project rather than build it, and

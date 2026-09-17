@@ -1,6 +1,6 @@
 # OpenGrep — bundled third-party component
 
-ECDAT bundles the OpenGrep binary to provide **Tier 4 dataflow analysis**: the
+Zypher bundles the OpenGrep binary to provide **Tier 4 dataflow analysis**: the
 ability to follow a cryptographic parameter across function boundaries so that a
 key size or algorithm name written at one place in a file is attributed to the
 call that consumes it.
@@ -27,21 +27,21 @@ project's constraints:
 * **No runtime dependency.** A single self-contained executable. No JVM, no
   Node, no Python, no background server. CodeQL, SonarQube, IBM's `cbomkit-lib`
   and Joern all require at least one of those.
-* **Offline.** The binary contains no network endpoints and no telemetry. ECDAT
+* **Offline.** The binary contains no network endpoints and no telemetry. Zypher
   is an air-gapped tool and must remain one.
 * **Licence.** LGPL-2.1 permits redistribution. The CodeQL CLI terms restrict
   automated analysis to open-source codebases, which excludes the closed-source
-  estate ECDAT is built to inventory.
+  estate Zypher is built to inventory.
 
 ## LGPL-2.1 compliance
 
 The binary is redistributed **unmodified** and is invoked as a separate process
-over a documented command-line interface. ECDAT does not link against it and
+over a documented command-line interface. Zypher does not link against it and
 contains no OpenGrep code.
 
 The complete corresponding source for this version is published by the upstream
 project at the release URL above. No patches have been applied.
 
-Rule files under `backend/scanners/rules/` are ECDAT's own work and are not
+Rule files under `backend/scanners/rules/` are Zypher's own work and are not
 derived from the Semgrep or OpenGrep rule corpora, both of which carry licences
 that forbid redistribution in a product.
