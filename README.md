@@ -14,31 +14,6 @@ Built for **Smart India Hackathon 2026**, NTRO Problem Statement **26164**.
 
 ---
 
-## Contents
-
-1. [Why discovery comes first](#1-why-discovery-comes-first)
-2. [What Zypher does](#2-what-zypher-does)
-3. [Quick start](#3-quick-start)
-4. [Building from source](#4-building-from-source)
-5. [Architecture](#5-architecture)
-6. [The six detection tiers](#6-the-six-detection-tiers)
-7. [The risk model](#7-the-risk-model)
-8. [Migration targets and planning](#8-migration-targets-and-planning)
-9. [Crypto agility](#9-crypto-agility)
-10. [Multi-installation deployment](#10-multi-installation-deployment)
-11. [Change tracking](#11-change-tracking)
-12. [Outputs](#12-outputs)
-13. [API reference](#13-api-reference)
-14. [Configuration](#14-configuration)
-15. [Testing](#15-testing)
-16. [Project layout](#16-project-layout)
-17. [Design principles](#17-design-principles)
-18. [Known limits](#18-known-limits)
-19. [Standards and references](#19-standards-and-references)
-20. [Licence](#20-licence)
-
----
-
 ## 1. Why discovery comes first
 
 A cryptographically relevant quantum computer breaks RSA, Diffie-Hellman and
@@ -139,12 +114,6 @@ pip install -r requirements-dev.txt
 cd frontend && npm install && cd ..
 ```
 
-### The dataflow engine
-
-Tier 4 uses [OpenGrep](https://github.com/opengrep/opengrep) (LGPL-2.1).
-The binary ships with the repository at `vendor/opengrep/opengrep.exe` — no
-separate download required.
-
 ### Build
 
 ```bash
@@ -183,21 +152,21 @@ cd frontend && npm run dev
 ┌─────────────────────────────────────────────────────────────┐
 │  pywebview  ·  Edge WebView2 window                         │
 │  ┌───────────────────────────────────────────────────────┐  │
-│  │  React 18 + Vite + Tailwind        (frontend/)         │  │
+│  │  React 18 + Vite + Tailwind        (frontend/)        │  │
 │  └───────────────────────────────────────────────────────┘  │
-│                          │ HTTP, localhost only              │
+│                          │ HTTP, localhost only             │
 │  ┌───────────────────────────────────────────────────────┐  │
-│  │  FastAPI + Uvicorn                 (backend/main.py)   │  │
+│  │  FastAPI + Uvicorn                 (backend/main.py)  │  │
 │  ├───────────────────────────────────────────────────────┤  │
-│  │  scanners/     six detection tiers                     │  │
-│  │  cbom/         normalisation, aggregation, CBOM        │  │
-│  │  analysis/     risk inputs, four models, agility       │  │
-│  │  recommendation/  targets, migration planner           │  │
-│  │  reporting/    HTML, CSV, CycloneDX                    │  │
+│  │  scanners/     six detection tiers                    │  │
+│  │  cbom/         normalisation, aggregation, CBOM       │  │
+│  │  analysis/     risk inputs, four models, agility      │  │
+│  │  recommendation/  targets, migration planner          │  │
+│  │  reporting/    HTML, CSV, CycloneDX                   │  │
 │  └───────────────────────────────────────────────────────┘  │
-│                          │                                   │
+│                          │                                  │
 │  ┌───────────────────────────────────────────────────────┐  │
-│  │  Local JSON files  ·  optional MongoDB                 │  │
+│  │  Local JSON files  ·  optional MongoDB                │  │
 │  └───────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
