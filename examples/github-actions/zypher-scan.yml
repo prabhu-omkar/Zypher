@@ -1,0 +1,115 @@
+# Zypher cryptographic discovery gate — a template to copy into your own
+# repository's .github/workflows/.
+#
+# It is kept here rather than in Zypher's own workflows because it scans the
+# repository it runs in: enabled on this project it would scan Zypher's own
+# detection rules, which are full of the algorithm names it looks for.
+#
+# Fails the build when a change introduces cryptography that is broken today or
+# whose protected data outlives the quantum horizon. The /api/scan/cicd endpoint
+# returns a `gate` of pass / warn / fail; this workflow turns that into an exit
+# code and uploads the CycloneDX CBOM as a build artefact.
+name: Zypher cryptographic scan
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  crypto-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check out Zypher
+        uses: actions/checkout@v4
+        with:
+          repository: prabhu-omkar/Zypher
+          path: .zypher
+
+      - name: Install Zypher
+        working-directory: .zypher
+        run: pip install -r requirements.txt
+
+      - name: Start the Zypher engine
+        working-directory: .zypher
+        run: |
+          python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 &
+          # Wait for readiness rather than sleeping a fixed amount.
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000/api/status >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8000/api/status >/dev/null
+
+      - name: Scan the workspace
+        id: scan
+        run: |
+          RESPONSE=$(curl -sf -X POST http://127.0.0.1:8000/api/scan/cicd \
+            -H 'Content-Type: application/json' \
+            -d "{\"target_name\":\"${{ github.repository }}\",\"target_type\":\"multi_target\",\"path\":\"${{ github.workspace }}\",\"mosca_z\":8.0}")
+
+          echo "$RESPONSE" | tee scan-result.json
+          {
+            echo "gate=$(jq -r .gate <<<"$RESPONSE")"
+            echo "scan_id=$(jq -r .scan_id <<<"$RESPONSE")"
+            echo "critical=$(jq -r .critical <<<"$RESPONSE")"
+            echo "high=$(jq -r .high <<<"$RESPONSE")"
+            echo "score=$(jq -r .quantum_readiness_score <<<"$RESPONSE")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download the CBOM
+        run: |
+          curl -sf -o cyclonedx-cbom.json \
+            "http://127.0.0.1:8000/api/scans/${{ steps.scan.outputs.scan_id }}/cbom"
+          curl -sf -o zypher-report.html \
+            "http://127.0.0.1:8000/api/scans/${{ steps.scan.outputs.scan_id }}/report/html"
+
+      - name: Upload the inventory
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zypher-cbom
+          path: |
+            cyclonedx-cbom.json
+            zypher-report.html
+            scan-result.json
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo "## Cryptographic inventory"
+            echo ""
+            echo "| Metric | Value |"
+            echo "|:--|--:|"
+            echo "| Quantum readiness | ${{ steps.scan.outputs.score }} / 100 |"
+            echo "| Critical | ${{ steps.scan.outputs.critical }} |"
+            echo "| High | ${{ steps.scan.outputs.high }} |"
+            echo "| Gate | \`${{ steps.scan.outputs.gate }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce the gate
+        run: |
+          case "${{ steps.scan.outputs.gate }}" in
+            fail)
+              echo "::error::${{ steps.scan.outputs.critical }} critical cryptographic finding(s). See the zypher-cbom artifact."
+              exit 1
+              ;;
+            warn)
+              echo "::warning::${{ steps.scan.outputs.high }} high-risk cryptographic finding(s)."
+              ;;
+            *)
+              echo "No critical or high-risk cryptographic findings."
+              ;;
+          esac
